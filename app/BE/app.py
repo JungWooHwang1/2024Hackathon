@@ -1,6 +1,11 @@
 import requests
 import json
 from pprint import pprint
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # 지역 코드와 이름 매핑
 region_codes = {
@@ -89,6 +94,25 @@ subregion_codes = {
     "48860":"산청군","48870":"함양군","48880":"거창군","48890":"합천군","49110":"제주시","49130":"서귀포시"
 }
 
+# 서울특별시: 25개
+# 부산광역시: 16개
+# 대구광역시: 8개
+# 인천광역시: 10개
+# 광주광역시: 5개
+# 대전광역시: 5개
+# 울산광역시: 5개
+# 세종특별자치시: 포함되지 않음
+# 경기도: 31개
+# 강원도: 18개
+# 충청북도: 11개
+# 충청남도: 15개
+# 전라북도: 14개
+# 전라남도: 22개
+# 경상북도: 23개
+# 경상남도: 18개
+# 제주특별자치도: 2개
+# 총 시,군,구 225개
+
 # 질병 코드와 이름 매핑
 disease_codes = {
     "1": "감기",
@@ -102,47 +126,107 @@ disease_codes = {
 url = 'http://apis.data.go.kr/B550928/dissForecastInfoSvc/getDissForecastInfo'
 serviceKey = 'Otv1v/0f39FS6HYgixWWtboXP3pJDTmelBL70DKU3M3dc2BZC+i+s89GCS6Xqb+DnPfo5ziNfrSKuP7r7Occng=='
 
-params = {
-    'serviceKey': serviceKey,
-    'numOfRows': '100',
-    'pageNo': '1',
-    'type': 'json',
-    'dissCd': '1',
-    'znCd': '26'
-}
+@app.route('/', methods=['GET'])
+def home():
+    return "hello"
 
-response = requests.get(url, params=params)
+@app.route('/api/forecast', methods=['GET'])
+def get_forecast():
+    # 클라이언트로부터 받는 파라미터
+    dissCd = request.args.get('dissCd')
+    znCd = request.args.get('znCd')
+    lowrnkZnCd = request.args.get('lowrnkZnCd')
 
-if response.status_code == 200:
-    try:
-        data = response.json()
-        items = data.get('response', {}).get('body', {}).get('items', [])
-        
-        for item in items:
-            dissCd = item.get('dissCd')
-            dt = item.get('dt')
-            znCd = item.get('znCd')
-            lowrnkZnCd = item.get('lowrnkZnCd')
-            cnt = item.get('cnt')
-            risk = item.get('risk')
-            dissRiskXpln = item.get('dissRiskXpln')
+    # API 요청 파라미터 설정
+    params = {
+        'serviceKey': serviceKey,
+        'numOfRows': '1000',
+        'pageNo': '1',
+        'type': 'json',
+        'dissCd': dissCd,
+        'znCd': znCd
+    }
 
-            # 코드에서 이름으로 변환
-            disease_name = disease_codes.get(dissCd, "Unknown Disease")
-            region_name = region_codes.get(znCd, "Unknown Region")
-            subregion_name = subregion_codes.get(lowrnkZnCd, "Unknown Subregion")
+    # API 호출
+    response = requests.get(url, params=params)
 
-            print(f"일자: {dt}")
-            print(f"질병명: {disease_name}")
-            print(f"지역명: {region_name} {subregion_name}")
-            print(f"예측진료건수: {cnt}")
-            print(f"예측위험도: {risk}")
-            print(f"위험도 지침: {dissRiskXpln}")
-            print("-----------")
+    if response.status_code == 200:
+        try:
+            data = response.json()
+            items = data.get('response', {}).get('body', {}).get('items', [])
+            filtered_items = []
 
-    except json.JSONDecodeError:
-        print("JSON 디코딩 오류가 발생했습니다.")
-        print("응답 내용:", response.text)
-else:
-    print(f"요청 실패: 상태 코드 {response.status_code}")
-    print(response.text)
+            for item in items:
+                if item.get('lowrnkZnCd') == lowrnkZnCd:
+                    filtered_items.append({
+                        "일자": item.get('dt'),
+                        "지역명": region_codes.get(znCd, "Unknown Region") + " " + subregion_codes.get(lowrnkZnCd, "Unknown Subregion"),
+                        "질병명": disease_codes.get(dissCd, "Unknown Disease"),
+                        "예측진료건수": item.get('cnt'),
+                        "예측위험도": item.get('risk'),
+                        "위험도 지침": item.get('dissRiskXpln')
+                    })
+
+            return jsonify(filtered_items)
+
+        except json.JSONDecodeError:
+            return jsonify({"error": "JSON 디코딩 오류가 발생했습니다."}), 500
+    else:
+        return jsonify({"error": f"요청 실패: 상태 코드 {response.status_code}"}), response.status_code
+
+if __name__ == '__main__':
+    app.run(debug=True, host="0.0.0.0", port="5003")
+
+
+# params = {
+#     'serviceKey': serviceKey,
+#     'numOfRows': '100',
+#     'pageNo': '1',
+#     'type': 'json',
+#     'dissCd': '15',
+#     'znCd': '11'
+# }
+
+# response = requests.get(url, params=params)
+
+# if response.status_code == 200:
+#     try:
+#         data = response.json()
+#         items = data.get('response', {}).get('body', {}).get('items', [])
+
+#         processed_data = []
+#         for item in items:
+#             dissCd = item.get('dissCd')
+#             dt = item.get('dt')
+#             znCd = item.get('znCd')
+#             lowrnkZnCd = item.get('lowrnkZnCd')
+#             cnt = item.get('cnt')
+#             risk = item.get('risk')
+#             dissRiskXpln = item.get('dissRiskXpln')
+
+#             # 코드에서 이름으로 변환
+#             disease_name = disease_codes.get(dissCd, "Unknown Disease")
+#             region_name = region_codes.get(znCd, "Unknown Region")
+#             subregion_name = subregion_codes.get(lowrnkZnCd, "Unknown Subregion")
+
+#             processed_data.append({
+#                 "일자": dt,
+#                 "지역명" : region_name + " " + subregion_name + "   ",
+#                 "질병명": disease_name,
+#                 "예측진료건수": cnt,
+#                 "예측위험도": risk,
+#                 "위험도 지침": dissRiskXpln
+#             })
+
+#         # DataFrame으로 변환
+#         df = pd.DataFrame(processed_data)
+
+#         # DataFrame 출력
+#         print(df)
+
+#     except json.JSONDecodeError:
+#         print("JSON 디코딩 오류가 발생했습니다.")
+#         print("응답 내용:", response.text)
+# else:
+#     print(f"요청 실패: 상태 코드 {response.status_code}")
+#     print(response.text)
