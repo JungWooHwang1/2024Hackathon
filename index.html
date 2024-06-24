@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart.js 세계지도</title>
+</head>
+<body>
+    <div>
+        <canvas id="myChart"></canvas>
+    </div>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="text/javascript" src="https://unpkg.com/chartjs-chart-geo@3.5.2/build/index.umd.min.js"></script>
+<script>
+const url = "https://unpkg.com/world-atlas@2.0.2/countries-50m.json"; //세계지도를 그리기 위한 json
+fetch(url).then(result => result.json()).then((datapoint) => {
+    //나라 뽑아내기
+    const countries = ChartGeo.topojson
+                        .feature(datapoint, datapoint.objects.countries).features;
+
+    //차트를 그리기 위한 데이터셋
+    const data = {
+        labels: countries.map(country => country.properties.name),
+        datasets: [{
+            label: 'Countries',
+            data: countries.map(country => ({feature: country, value: Math.random()*100})) //노출데이터는 랜덤값으로 표기
+        }]
+    };
+    
+    //차트 옵션
+    const config = {
+        type: 'choropleth', //차트 모양 > 지구본 타입 설정
+        data,
+        options: {
+            showOutline: true, //지구본 원형라인 잡아주기
+            showGraticule: true, //지구본 위, 경도선 그려주기
+            scales: {
+                xy: {
+                    projection: 'equalEarth' //지구본 모양으로 변경
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false //chart.js차트 범례 숨기기(별도 표기가 됨)
+                }
+            }
+        }
+
+    };
+
+    const myChart = new Chart(
+        document.getElementById('myChart'),
+        config
+    );  
+});
+</script>
+</body>
+</html>
