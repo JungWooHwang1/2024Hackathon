@@ -64,8 +64,9 @@ body {
 }
 
 .mini_map {
-    width: 50%;
-    border: 1px solid red;
+    width: 30%;
+    height: 100%;
+    border: 1px solid purple;
 }
 
 .number_of_medical {
@@ -80,7 +81,38 @@ body {
 }
 
 .chat_bot {
-    width: 30%;
-    height: 100%;
-    border: 1px solid purple;
+    width: 50%;
+    border: 1px solid red;
+  
+}
+
+
+#states path {
+    stroke: #fff;
+    stroke-width: 1.5px;
+    transition: transform 0.2s ease; 
+}
+
+#states path:hover {
+    fill: #009300;
+    transform: scale(1.05); /* 크기를 10% 키우기 */
+    z-index: 3;
+}
+
+#states .active {
+    fill: #00B700;
+}
+
+#states .activeDetail {
+    fill: #00B700;
+}
+
+#states path {
+    cursor: pointer;
+}
+
+#states text {
+    cursor: pointer;
+    font-size: 12px;
+    fill: #fff;
 }

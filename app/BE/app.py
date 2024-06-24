@@ -164,7 +164,7 @@ def get_forecast():
                         "질병명": disease_codes.get(dissCd, "Unknown Disease"),
                         "예측진료건수": item.get('cnt'),
                         "예측위험도": item.get('risk'),
-                        "위험도 지침": item.get('dissRiskXpln')
+                        "위험도지침": item.get('dissRiskXpln')
                     })
 
             return jsonify(filtered_items)

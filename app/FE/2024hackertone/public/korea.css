@@ -1,0 +1,36 @@
+@charset "UTF-8";
+
+.mini_map {
+    width: 700px;
+    height: 700px;
+    float: left;
+    margin: 15px 35px;
+}
+
+#states path {
+    fill: #585858;
+    stroke: #fff;
+    stroke-width: 1.5px;
+}
+
+#states path:hover {
+    fill: #009300;
+}
+
+#states .active {
+    fill: #00B700;
+}
+
+#states .activeDetail {
+    fill: #00B700;
+}
+
+#states path {
+    cursor: pointer;
+}
+
+#states text {
+    cursor: pointer;
+    font-size: 12px;
+    fill: #fff;
+}
