@@ -7,11 +7,10 @@ export default function main() {
         <main class="container" style={{
             backgroundColor: "gray"
         }}>
-            <div>
-
-            </div>
+            
+            <div class="header_text">Disease Prediction</div>
             <div class="main_contents">
-                <div class="header_text">Disease Prediction</div>
+            
                 
                 <div class="dd">
                     <div class="danger_list">danger_list</div>
@@ -24,9 +23,20 @@ export default function main() {
                 </div>
                 <div class="chat_bot"></div>
             </div>
-            
         </main>
+
+        
     )
+}
+
+const Connector = () => {
+    fetch("./")
+    .then((response) => response.json())
+    .then((json) => {
+        data = json.items;
+        data.json(data)
 
 
+        
+    })
 }
