@@ -66,7 +66,7 @@ body {
 .mini_map {
     width: 30%;
     height: 100%;
-    background-color: #bbbbdd;
+    background-color: #2F2F2F;
     border: 1px solid purple;
 }
 
@@ -89,7 +89,7 @@ body {
 
 
 #states path {
-    stroke: #fff;
+    stroke: brown;
     stroke-width: 1.5px;
     transition: transform 0.2s ease; 
 }

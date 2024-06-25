@@ -3,7 +3,25 @@ import * as d3 from 'd3';
 import { geoMercator, geoPath } from 'd3-geo';
 import { zoom } from 'd3-zoom';
 import "../css/main.css";
-import { drawSeoulMap, drawGyeonggiMap, drawIncheonMap, drawGangwonMap, drawChungnamMap } from './mapFunctions';
+import {
+    drawSeoulMap,
+    drawGyeonggiMap,
+    drawIncheonMap,
+    drawGangwonMap,
+    drawChungnamMap,
+    drawChungbukMap,
+    drawJeonnamMap,
+    drawJeonbukMap,
+    drawGyeongbukMap,   
+    drawGyeongnamMap,   
+    drawJejuMap,        
+    drawBusanMap,       
+    drawUlsanMap,       
+    drawDaeguMap,       
+    drawDaejeonMap,     
+    drawGwangjuMap,     
+    drawSejongMap       
+} from './mapFunctions';
 
 const colorMapping = {
     'seoul': '#FADADD',
@@ -15,11 +33,11 @@ const colorMapping = {
     'ulsan': '#FFE4E1',
     'sejong': '#ADD8E6',
     'gyeonggi-do': '#D8BFD8',
-    'gangwon-do': '#DDA0DD',
+    'gangwon-do': '#F08080',
     'chungcheongbuk-do': '#B0E0E6',
     'chungcheongnam-do': '#EEE8AA',
     'jeollabuk-do': '#F0FFF0',
-    'jeollanam-do': '#F08080',
+    'jeollanam-do': '#DDA0DD',
     'gyeongsangbuk-do': '#FFA07A',
     'gyeongsangnam-do': '#FFFACD',
     'jeju-do': '#F5FFFA'
@@ -51,7 +69,6 @@ const Main = () => {
 
 export default Main;
 
-// 지도 그리기 함수
 function drawMap(target) {
     console.log('Drawing map in', target);
 
@@ -81,9 +98,10 @@ function drawMap(target) {
     states.append('rect')
         .attr('class', 'background')
         .attr('width', width)
-        .attr('height', height);
+        .attr('height', height)
+        .attr('fill', '#87cefa'); // 배경 색상 설정
 
-    d3.json('korea.json').then(json => {
+    d3.json('/korea.json').then(json => {
         console.log('JSON data loaded:', json);
 
         states.selectAll('path')
@@ -95,22 +113,15 @@ function drawMap(target) {
             .attr('fill', d => colorMapping[d.properties.name_eng?.toLowerCase() || 'unknown'] || '#585858')
             .attr('stroke', '#000')
             .attr('stroke-width', '1.5')
+            .append('title')
+            .text(d => d.properties.name);
+
+        states.selectAll('path')
             .on('mouseenter', function(event, d) {
                 d3.select(this).raise().transition().duration(200).attr('transform', 'scale(1.05)');
-                states.append('text')
-                    .attr('id', `label-${d.properties.name_eng || 'unknown'}`)
-                    .attr('transform', () => {
-                        const [x, y] = path.centroid(d);
-                        return `translate(${x}, ${y})`;
-                    })
-                    .attr('text-anchor', 'middle')
-                    .attr('dy', '.35em')
-                    .attr('fill', '#fff')
-                    .text(d.properties.name);
             })
             .on('mouseleave', function(event, d) {
                 d3.select(this).transition().duration(200).attr('transform', 'scale(1)');
-                states.select(`#label-${d.properties.name_eng || 'unknown'}`).remove();
             })
             .on('click', function(event, d) {
                 if (d.properties.name_eng?.toLowerCase() === 'seoul') {
@@ -128,6 +139,42 @@ function drawMap(target) {
                 } else if (d.properties.name_eng?.toLowerCase() === 'chungcheongnam-do') {
                     console.log('Chungcheongnam-do clicked');
                     drawChungnamMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'chungcheongbuk-do') {
+                    console.log('Chungcheongbuk-do clicked');
+                    drawChungbukMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'jeollanam-do') {
+                    console.log('Jeollanam-do clicked');
+                    drawJeonnamMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'jeollabuk-do') {
+                    console.log('Jeollabuk-do clicked');
+                    drawJeonbukMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'gyeongsangbuk-do') {
+                    console.log('Gyeongsangbuk-do clicked');
+                    drawGyeongbukMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'gyeongsangnam-do') {
+                    console.log('Gyeongsangnam-do clicked');
+                    drawGyeongnamMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'jeju-do') {
+                    console.log('Jeju-do clicked');
+                    drawJejuMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'busan') {
+                    console.log('Busan clicked');
+                    drawBusanMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'ulsan') {
+                    console.log('Ulsan clicked');
+                    drawUlsanMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'daegu') {
+                    console.log('Daegu clicked');
+                    drawDaeguMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'daejeon') {
+                    console.log('Daejeon clicked');
+                    drawDaejeonMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'gwangju') {
+                    console.log('Gwangju clicked');
+                    drawGwangjuMap();
+                } else if (d.properties.name_eng?.toLowerCase() === 'sejong') {
+                    console.log('Sejong clicked');
+                    drawSejongMap();
                 }
             });
     }).catch(error => {
