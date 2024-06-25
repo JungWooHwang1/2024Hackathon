@@ -73,6 +73,7 @@ body {
 .number_of_medical {
     width: 50%;
     border: 1px solid red;
+    overflow: hidden;
 }
 
 .behavior {

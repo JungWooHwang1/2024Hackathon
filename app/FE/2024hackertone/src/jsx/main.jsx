@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as d3 from 'd3';
 import { geoMercator, geoPath } from 'd3-geo';
 import { zoom } from 'd3-zoom';
@@ -12,16 +12,17 @@ import {
     drawChungbukMap,
     drawJeonnamMap,
     drawJeonbukMap,
-    drawGyeongbukMap,   
-    drawGyeongnamMap,   
-    drawJejuMap,        
-    drawBusanMap,       
-    drawUlsanMap,       
-    drawDaeguMap,       
-    drawDaejeonMap,     
-    drawGwangjuMap,     
-    drawSejongMap       
+    drawGyeongbukMap,
+    drawGyeongnamMap,
+    drawJejuMap,
+    drawBusanMap,
+    drawUlsanMap,
+    drawDaeguMap,
+    drawDaejeonMap,
+    drawGwangjuMap,
+    drawSejongMap
 } from './mapFunctions';
+// import StressDepressionChart from './StressDepressionChart';
 
 const colorMapping = {
     'seoul': '#FADADD',
@@ -33,31 +34,74 @@ const colorMapping = {
     'ulsan': '#FFE4E1',
     'sejong': '#ADD8E6',
     'gyeonggi-do': '#D8BFD8',
-    'gangwon-do': '#F08080',
+    'gangwon-do': '#DDA0DD',
     'chungcheongbuk-do': '#B0E0E6',
     'chungcheongnam-do': '#EEE8AA',
     'jeollabuk-do': '#F0FFF0',
-    'jeollanam-do': '#DDA0DD',
+    'jeollanam-do': '#F08080',
     'gyeongsangbuk-do': '#FFA07A',
     'gyeongsangnam-do': '#FFFACD',
     'jeju-do': '#F5FFFA'
 };
 
 const Main = () => {
+    const [selectedRegion, setSelectedRegion] = useState(null);
+    const [chartData, setChartData] = useState({});
+    const [topIncomeRegions, setTopIncomeRegions] = useState([]);
+
     useEffect(() => {
         console.log('Component mounted');
-        drawMap('.mini_map');
+        drawMap('.mini_map', handleRegionClick, setTopIncomeRegions);
     }, []);
+
+    const handleRegionClick = async (region) => {
+        try {
+            const stressResponse = await fetch('http://3.36.50.178:5003/stress-data');
+            const stressResult = await stressResponse.json();
+            const stress = stressResult.find(item => item.region === region)?.standard_rate_2023 || null;
+
+            const depressionResponse = await fetch('http://3.36.50.178:5003/depression-data');
+            const depressionResult = await depressionResponse.json();
+            const depression = depressionResult.find(item => item.region === region)?.standard_rate_2023 || null;
+
+            const degressiveResponse = await fetch('http://3.36.50.178:5003/degressive-data');
+            const degressiveResult = await degressiveResponse.json();
+            const degressive = degressiveResult.find(item => item.region === region)?.standard_rate_2023 || null;
+
+            setSelectedRegion(region);
+            setChartData({
+                stress,
+                depression,
+                degressive
+            });
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    };
 
     return (
         <main className="container" style={{ backgroundColor: "gray" }}>
             <div className="header_text">Disease Prediction</div>
             <div className="main_contents">
-                <div className="mini_map"></div>    
+                <div className="mini_map"></div>
                 <div className="dd">
-                    <div className="danger_list">danger_list</div>
+                    <div className="danger_list">
+                        <h2>Top 10 Average Incomes</h2>
+                        <ul>
+                            {topIncomeRegions.map((region, index) => (
+                                <li key={index}>{region.name}: {region.income}</li>
+                            ))}
+                        </ul>
+                    </div>
                     <div className="local">
-                        <div className="number_of_medical"></div>
+                        <div className="number_of_medical">
+                            {selectedRegion}
+                                {/* // <StressDepressionChart
+                                //     region={selectedRegion}
+                                //     data={chartData}
+                                // /> */}
+                    
+                        </div>
                         <div className="chat_bot">chat_bot</div>
                     </div>
                     <div className="behavior">behavior</div>
@@ -69,7 +113,7 @@ const Main = () => {
 
 export default Main;
 
-function drawMap(target) {
+function drawMap(target, handleRegionClick, setTopIncomeRegions) {
     console.log('Drawing map in', target);
 
     d3.select(target).selectAll('svg').remove();
@@ -117,64 +161,65 @@ function drawMap(target) {
             .text(d => d.properties.name);
 
         states.selectAll('path')
-            .on('mouseenter', function(event, d) {
+            .on('mouseenter', function (event, d) {
                 d3.select(this).raise().transition().duration(200).attr('transform', 'scale(1.05)');
             })
-            .on('mouseleave', function(event, d) {
+            .on('mouseleave', function (event, d) {
                 d3.select(this).transition().duration(200).attr('transform', 'scale(1)');
             })
-            .on('click', function(event, d) {
-                if (d.properties.name_eng?.toLowerCase() === 'seoul') {
+            .on('click', function (event, d) {
+                const regionName = d.properties.name_eng?.toLowerCase();
+                if (regionName === 'seoul') {
                     console.log('Seoul clicked');
-                    drawSeoulMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'gyeonggi-do') {
+                    drawSeoulMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'gyeonggi-do') {
                     console.log('Gyeonggi-do clicked');
-                    drawGyeonggiMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'incheon') {
+                    drawGyeonggiMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'incheon') {
                     console.log('Incheon clicked');
-                    drawIncheonMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'gangwon-do') {
+                    drawIncheonMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'gangwon-do') {
                     console.log('Gangwon-do clicked');
-                    drawGangwonMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'chungcheongnam-do') {
+                    drawGangwonMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'chungcheongnam-do') {
                     console.log('Chungcheongnam-do clicked');
-                    drawChungnamMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'chungcheongbuk-do') {
+                    drawChungnamMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'chungcheongbuk-do') {
                     console.log('Chungcheongbuk-do clicked');
-                    drawChungbukMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'jeollanam-do') {
-                    console.log('Jeollanam-do clicked');
-                    drawJeonnamMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'jeollabuk-do') {
-                    console.log('Jeollabuk-do clicked');
-                    drawJeonbukMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'gyeongsangbuk-do') {
+                    drawChungbukMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'jeollanam-do') {
+                    console.log('Jeonnam clicked');
+                    drawJeonnamMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'jeollabuk-do') {
+                    console.log('Jeonbuk clicked');
+                    drawJeonbukMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'gyeongsangbuk-do') {
                     console.log('Gyeongsangbuk-do clicked');
-                    drawGyeongbukMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'gyeongsangnam-do') {
+                    drawGyeongbukMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'gyeongsangnam-do') {
                     console.log('Gyeongsangnam-do clicked');
-                    drawGyeongnamMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'jeju-do') {
+                    drawGyeongnamMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'jeju-do') {
                     console.log('Jeju-do clicked');
-                    drawJejuMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'busan') {
+                    drawJejuMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'busan') {
                     console.log('Busan clicked');
-                    drawBusanMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'ulsan') {
+                    drawBusanMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'ulsan') {
                     console.log('Ulsan clicked');
-                    drawUlsanMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'daegu') {
+                    drawUlsanMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'daegu') {
                     console.log('Daegu clicked');
-                    drawDaeguMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'daejeon') {
+                    drawDaeguMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'daejeon') {
                     console.log('Daejeon clicked');
-                    drawDaejeonMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'gwangju') {
+                    drawDaejeonMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'gwangju') {
                     console.log('Gwangju clicked');
-                    drawGwangjuMap();
-                } else if (d.properties.name_eng?.toLowerCase() === 'sejong') {
+                    drawGwangjuMap(handleRegionClick, setTopIncomeRegions);
+                } else if (regionName === 'sejong') {
                     console.log('Sejong clicked');
-                    drawSejongMap();
+                    drawSejongMap(handleRegionClick, setTopIncomeRegions);
                 }
             });
     }).catch(error => {
