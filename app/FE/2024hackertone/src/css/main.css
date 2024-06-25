@@ -4,57 +4,84 @@
     box-sizing: border-box;
 }
 
+
 body {
-    background-color: gray;
+    width: 100%;
+    background-color: #1e1e2f;
     
     justify-content: center;
     align-items: center;
     height: 100vh;
+    color: #fff;
+    font-family: Arial, sans-serif;
 }
+
 
 .container {
     
     display: flex;
+   
     flex-direction: column;
     justify-content: center;
     align-items: center;
     padding: 20px;
     border-radius: 10px;
-   
 }
 
 .header_text {
-    border: 1px solid red;
     width: 100%;
     text-align: center;
-    padding: 5px;
-    
+    padding: 10px;
+    border-bottom: 2px solid #fff;
+    font-size: 24px;
+    margin-bottom: 20px;
+
 }
 
 .main_contents {
     width: 100%;
     height: 80vh; 
-    border: 1px solid blue;
+    
     padding: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
-   
 }
 
 .dd {
     width: 70%;
-    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    border: 1px solid yellow;
+    align-items: center;
+    
+    background-color: #2b2b3d;
+    padding: 10px;
 }
 
 .danger_list {
     width: 100%;
-    height: 20%;
-    border: 1px solid red;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.danger_list_column {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.danger_list_column ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    width: 45%;
+}
+
+.danger_list li {
+    text-align: left;
+    margin: 10px;
 }
 
 .local {
@@ -71,9 +98,13 @@ body {
 }
 
 .number_of_medical {
-    width: 50%;
+    flex: 1;
+    height: 100%;
     border: 1px solid red;
     overflow: hidden;
+    
+    justify-content: center;
+    align-items: center;
 }
 
 .behavior {
@@ -85,9 +116,7 @@ body {
 .chat_bot {
     width: 50%;
     border: 1px solid red;
-  
 }
-
 
 #states path {
     stroke: brown;
@@ -97,7 +126,7 @@ body {
 
 #states path:hover {
     fill: #009300;
-    transform: scale(1.05); /* 크기를 10% 키우기 */
+    transform: scale(1.05); 
     z-index: 3;
 }
 

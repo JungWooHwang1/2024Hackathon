@@ -60,78 +60,6 @@ async function updateMapWithIncome(target, region) {
     }
 }
 
-function handleRegionClick(regionName) {
-    // 지역 이름을 올바르게 추출합니다.
-    const region = regionName.replace('구', '').trim(); // 예: '용산구' -> '용산'
-    console.log(`Fetching data for region: ${regionName}`);
-    console.log(`Region for API call: ${region}`);
-
-    Promise.all([
-        fetch(`http://3.36.50.178:5003/stress-data`).then(res => res.json()),
-        fetch(`http://3.36.50.178:5003/depression-data`).then(res => res.json()),
-        fetch(`http://3.36.50.178:5003/degressive-data`).then(res => res.json())
-    ]).then(([stressData, depressionData, degressiveData]) => {
-        console.log('Fetched stressData:', stressData);
-        console.log('Fetched depressionData:', depressionData);
-        console.log('Fetched degressiveData:', degressiveData);
-
-        const stress = stressData.find(item => item.region.includes(region));
-        const depression = depressionData.find(item => item.region.includes(region));
-        const degressive = degressiveData.find(item => item.region.includes(region));
-
-        const data = [
-            { label: '스트레스', value: stress ? parseFloat(stress.standard_rate_2023) : 0 },
-            { label: '우울감', value: depression ? parseFloat(depression.standard_rate_2023) : 0 },
-            { label: '우울증상', value: degressive ? parseFloat(degressive.standard_rate_2023) : 0 }
-        ];
-
-        console.log('Processed data for chart:', data);
-        renderChart(data);
-    }).catch(error => {
-        console.error('Error fetching region data:', error);
-    });
-}
-
-
-export function renderChart(data) {
-    d3.select('.number_of_medical').selectAll('svg').remove(); // 기존 차트 제거
-
-    const svg = d3.select('.number_of_medical').append('svg')
-        .attr('width', 400)
-        .attr('height', 300);
-
-    const margin = { top: 20, right: 30, bottom: 40, left: 40 };
-    const width = +svg.attr('width') - margin.left - margin.right;
-    const height = +svg.attr('height') - margin.top - margin.bottom;
-
-    const x = d3.scaleBand()
-        .domain(data.map(d => d.label))
-        .range([margin.left, width - margin.right])
-        .padding(0.1);
-
-    const y = d3.scaleLinear()
-        .domain([0, 100]).nice() // 최대값을 100으로 설정
-        .range([height - margin.bottom, margin.top]);
-
-    svg.append('g')
-        .attr('transform', `translate(${margin.left},0)`)
-        .call(d3.axisLeft(y));
-
-    svg.append('g')
-        .attr('transform', `translate(0,${height - margin.bottom})`)
-        .call(d3.axisBottom(x));
-
-    svg.selectAll('.bar')
-        .data(data)
-        .enter().append('rect')
-        .attr('class', 'bar')
-        .attr('x', d => x(d.label))
-        .attr('y', d => y(d.value))
-        .attr('width', x.bandwidth())
-        .attr('height', d => y(0) - y(d.value))
-        .attr('fill', 'steelblue');
-}
-
 export function drawSeoulMap(handleRegionClick, setTopIncomeRegions) {
     console.log('Drawing Seoul map');
 
@@ -222,7 +150,7 @@ export function drawSeoulMap(handleRegionClick, setTopIncomeRegions) {
 }
 
 
-export function drawGyeonggiMap() {
+export function drawGyeonggiMap(handleRegionClick, setTopIncomeRegions) {
     console.log('Drawing Gyeonggi map');
 
     const width = 600;
@@ -287,6 +215,18 @@ export function drawGyeonggiMap() {
                         const regionName = d.properties.SIG_KOR_NM;
                         console.log(`${regionName} clicked`);
                         handleRegionClick(regionName);
+
+                        // 경기도 내에서 소득 상위 10개 지역 설정
+                        const gyeonggiIncomeData = incomeData.filter(item => item.sigungu_nm.includes('경기도'));
+                        const sortedIncomeData = gyeonggiIncomeData
+                            .map(item => ({
+                                name: item.sigungu_nm.replace('경기도 ', '').trim(),
+                                income: item.average_income_price
+                            }))
+                            .sort((a, b) => b.income - a.income)
+                            .slice(0, 10);
+
+                        setTopIncomeRegions(sortedIncomeData);
                     })
                     .append('title')
                     .text(d => `${d.properties.SIG_KOR_NM}: ${incomeMap[d.properties.SIG_KOR_NM.trim()] || 'No data'}`);
@@ -299,9 +239,8 @@ export function drawGyeonggiMap() {
     });
 }
 
-export function drawIncheonMap() {
+export function drawIncheonMap(handleRegionClick, setTopIncomeRegions) {
     console.log('Drawing Incheon map');
-
     const width = 640;
     const height = 534;
     const initialScale = 20000;
@@ -364,6 +303,18 @@ export function drawIncheonMap() {
                         const regionName = d.properties.SIG_KOR_NM;
                         console.log(`${regionName} clicked`);
                         handleRegionClick(regionName);
+
+                        // 인천 광역시 내에서 소득 상위 10개 지역 설정
+                        const incheonIncomeData = incomeData.filter(item => item.sigungu_nm.includes('인천광역시'));
+                        const sortedIncomeData = incheonIncomeData
+                            .map(item => ({
+                                name: item.sigungu_nm.replace('인천광역시 ', '').trim(),
+                                income: item.average_income_price
+                            }))
+                            .sort((a, b) => b.income - a.income)
+                            .slice(0, 10);
+
+                        setTopIncomeRegions(sortedIncomeData);
                     })
                     .append('title')
                     .text(d => `${d.properties.SIG_KOR_NM}: ${incomeMap[d.properties.SIG_KOR_NM.trim()] || 'No data'}`);
@@ -377,17 +328,16 @@ export function drawIncheonMap() {
 }
 
 
-export function drawGangwonMap() {
+export function drawGangwonMap(handleRegionClick, setTopIncomeRegions) {
     console.log('Drawing Gangwon map');
-
-    const width = 440;
+    const width = 640;
     const height = 534;
-    const initialScale = 10000;
+    const initialScale = 20000;
     const initialX = 128.1555;
     const initialY = 37.8228;
 
     const projection = createProjection(width, height, initialX, initialY, initialScale);
-    const path = d3.geoPath().projection(projection);
+    const path = geoPath().projection(projection);
 
     const svg = d3.select('.mini_map')
         .select('svg');
@@ -411,7 +361,52 @@ export function drawGangwonMap() {
 
                 console.log('Income Map:', incomeMap);
 
-                updateMapWithIncome(states, path, json, incomeMap);
+                const maxIncome = Math.max(...Object.values(incomeMap));
+                const minIncome = Math.min(...Object.values(incomeMap));
+
+                const colorScale = d3.scaleLinear()
+                    .domain([minIncome, maxIncome])
+                    .range(["#e0f7fa", "#004d40"]);
+
+                states.selectAll('path')
+                    .data(json.features)
+                    .enter()
+                    .append('path')
+                    .attr('d', path)
+                    .attr('id', d => `path-${d.properties.adm_nm || 'unknown'}`)
+                    .attr('fill', d => {
+                        const key = d.properties.adm_nm.trim();
+                        const income = incomeMap[key];
+                        console.log(`adm_nm: ${d.properties.adm_nm}, Key: ${key}, Income: ${income}`);
+                        return income !== undefined ? colorScale(income) : '#585858';
+                    })
+                    .attr('stroke', '#000')
+                    .attr('stroke-width', '1.5')
+                    .on('mouseenter', function (event, d) {
+                        d3.select(this).raise().transition().duration(200).attr('transform', 'scale(1.05)');
+                    })
+                    .on('mouseleave', function (event, d) {
+                        d3.select(this).transition().duration(200).attr('transform', 'scale(1)');
+                    })
+                    .on('click', function (event, d) {
+                        const regionName = d.properties.adm_nm;
+                        console.log(`${regionName} clicked`);
+                        handleRegionClick(regionName);
+
+                        // 강원도 내에서 소득 상위 10개 지역 설정
+                        const gangwonIncomeData = incomeData.filter(item => item.sigungu_nm.includes('강원도'));
+                        const sortedIncomeData = gangwonIncomeData
+                            .map(item => ({
+                                name: item.sigungu_nm.replace('강원도 ', '').trim(),
+                                income: item.average_income_price
+                            }))
+                            .sort((a, b) => b.income - a.income)
+                            .slice(0, 10);
+
+                        setTopIncomeRegions(sortedIncomeData);
+                    })
+                    .append('title')
+                    .text(d => `${d.properties.adm_nm}: ${incomeMap[d.properties.adm_nm.trim()] || 'No data'}`);
             })
             .catch(error => {
                 console.error('Error fetching income data:', error);

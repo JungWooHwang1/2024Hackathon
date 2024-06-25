@@ -22,7 +22,7 @@ import {
     drawGwangjuMap,
     drawSejongMap
 } from './mapFunctions';
-// import StressDepressionChart from './StressDepressionChart';
+import StressDepressionChart from './StressDepressionChart';
 
 const colorMapping = {
     'seoul': '#FADADD',
@@ -44,6 +44,12 @@ const colorMapping = {
     'jeju-do': '#F5FFFA'
 };
 
+const normalizeRegionForComparison = (name) => {
+    const cleanedName = name.replace(/^(서울특별시|부산광역시|대구광역시|인천광역시|광주광역시|대전광역시|울산광역시|세종특별자치시|제주특별자치도|경기도|강원도|충청북도|충청남도|전라북도|전라남도|경상북도|경상남도)\s*/, '').replace(/(시|군|구)$/, '').trim().toLowerCase().replace(/\s+/g, '').replace(/[^가-힣a-z0-9]/g, '');
+    console.log(`Original name: ${name}, Cleaned name: ${cleanedName}`);
+    return cleanedName;
+};
+
 const Main = () => {
     const [selectedRegion, setSelectedRegion] = useState(null);
     const [chartData, setChartData] = useState({});
@@ -55,19 +61,40 @@ const Main = () => {
     }, []);
 
     const handleRegionClick = async (region) => {
+        console.log(`Fetching data for region: ${region}`);
+        const normalizedRegion = normalizeRegionForComparison(region);
+        console.log(`Normalized region: ${normalizedRegion}`);
+        
         try {
             const stressResponse = await fetch('http://3.36.50.178:5003/stress-data');
             const stressResult = await stressResponse.json();
-            const stress = stressResult.find(item => item.region === region)?.standard_rate_2023 || null;
-
+            const normalizedStressResult = stressResult.map(item => ({
+                ...item,
+                normalizedRegion: normalizeRegionForComparison(item.region)
+            }));
+            const stress = normalizedStressResult.find(item => item.normalizedRegion === normalizedRegion)?.standard_rate_2023 || null;
+    
+            console.log(`Stress data: ${JSON.stringify(normalizedStressResult)}`);
+            console.log(`Found stress value: ${stress}`);
+    
             const depressionResponse = await fetch('http://3.36.50.178:5003/depression-data');
             const depressionResult = await depressionResponse.json();
-            const depression = depressionResult.find(item => item.region === region)?.standard_rate_2023 || null;
-
+            const normalizedDepressionResult = depressionResult.map(item => ({
+                ...item,
+                normalizedRegion: normalizeRegionForComparison(item.region)
+            }));
+            const depression = normalizedDepressionResult.find(item => item.normalizedRegion === normalizedRegion)?.standard_rate_2023 || null;
+    
             const degressiveResponse = await fetch('http://3.36.50.178:5003/degressive-data');
             const degressiveResult = await degressiveResponse.json();
-            const degressive = degressiveResult.find(item => item.region === region)?.standard_rate_2023 || null;
-
+            const normalizedDegressiveResult = degressiveResult.map(item => ({
+                ...item,
+                normalizedRegion: normalizeRegionForComparison(item.region)
+            }));
+            const degressive = normalizedDegressiveResult.find(item => item.normalizedRegion === normalizedRegion)?.standard_rate_2023 || null;
+    
+            console.log(`Data for ${region}:`, { stress, depression, degressive });
+    
             setSelectedRegion(region);
             setChartData({
                 stress,
@@ -79,32 +106,45 @@ const Main = () => {
         }
     };
 
+    const splitTopIncomeRegions = () => {
+        const halfwayIndex = Math.ceil(topIncomeRegions.length / 2);
+        return [topIncomeRegions.slice(0, halfwayIndex), topIncomeRegions.slice(halfwayIndex)];
+    };
+
+    const [leftColumn, rightColumn] = splitTopIncomeRegions();
+
     return (
         <main className="container" style={{ backgroundColor: "gray" }}>
-            <div className="header_text">Disease Prediction</div>
+            <div className="header_text">Local Visualization</div>
             <div className="main_contents">
                 <div className="mini_map"></div>
                 <div className="dd">
                     <div className="danger_list">
                         <h2>Top 10 Average Incomes</h2>
-                        <ul>
-                            {topIncomeRegions.map((region, index) => (
-                                <li key={index}>{region.name}: {region.income}</li>
-                            ))}
-                        </ul>
+                        <div className="danger_list_column">
+                            <ul>
+                                {leftColumn.map((region, index) => (
+                                    <li key={index}>{region.name}: {region.income} 만원</li>
+                                ))}
+                            </ul>
+                            <ul>
+                                {rightColumn.map((region, index) => (
+                                    <li key={index}>{region.name}: {region.income} 만원</li>
+                                ))}
+                            </ul>
+                        </div>
                     </div>
                     <div className="local">
                         <div className="number_of_medical">
                             {selectedRegion}
-                                {/* // <StressDepressionChart
-                                //     region={selectedRegion}
-                                //     data={chartData}
-                                // /> */}
-                    
+                            {<StressDepressionChart
+                                region={selectedRegion}
+                                data={chartData}
+                            />}
                         </div>
-                        <div className="chat_bot">chat_bot</div>
+                        
                     </div>
-                    <div className="behavior">behavior</div>
+                    
                 </div>
             </div>
         </main>
@@ -143,7 +183,7 @@ function drawMap(target, handleRegionClick, setTopIncomeRegions) {
         .attr('class', 'background')
         .attr('width', width)
         .attr('height', height)
-        .attr('fill', '#87cefa'); // 배경 색상 설정
+        .attr('fill', '#2F2F2F'); // 배경 색상 설정
 
     d3.json('/korea.json').then(json => {
         console.log('JSON data loaded:', json);
@@ -234,3 +274,4 @@ function drawMap(target, handleRegionClick, setTopIncomeRegions) {
 
     svg.call(zoomBehavior);
 }
+
